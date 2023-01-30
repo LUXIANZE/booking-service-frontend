@@ -1,4 +1,4 @@
 export interface SortModel {
-    fieldName: string,
-    sort: 'ASC' | 'DESC'
+    fieldName: string;
+    sort: 'ASC' | 'DESC';
 }

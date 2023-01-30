@@ -1,8 +1,8 @@
 export interface SessionDTO {
-    id: number,
-    dateTime: string,
-    slots: number,
-    sessionType: SessionType
+    id: number;
+    dateTime: string;
+    totalSlots: number;
+    sessionType: SessionType;
 }
 
 export enum SessionType {

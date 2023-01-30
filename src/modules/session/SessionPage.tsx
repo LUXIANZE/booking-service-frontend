@@ -2,46 +2,58 @@ import React, {useEffect, useState} from "react";
 import {
     Button,
     Dialog, DialogActions, DialogContent,
-    DialogTitle,
+    DialogTitle, Stack,
     Table,
     TableBody,
     TableCell,
     TableFooter,
     TableHead,
     TablePagination,
-    TableRow
+    TableRow, TextField
 } from "@mui/material";
 import {getSessions} from "../../http/session-api";
 import {PageModel} from "../../models/dto/page-model";
 import {SessionDTO} from "../../models/dto/session-dto";
 import {useNavigate} from "react-router-dom";
+import {StaticDatePicker} from "@mui/x-date-pickers";
+import dayjs, {Dayjs} from "dayjs";
+import {getBookingBySessionId} from "../../http/booking-api";
+import {BookingDTO} from "../../models/dto/booking.dto";
 
 export const SessionPage: React.FC = () => {
 
     const [data, setData] = useState<PageModel<SessionDTO>>();
     const [selectedSession, setSelectedSession] = useState<SessionDTO>();
+    const [selectedDate, setSelectedDate] = React.useState<Dayjs>(dayjs());
+
     const [page, setPage] = useState<number>(0);
     const pageSize = 10;
     const navigate = useNavigate();
 
     useEffect(() => {
         (async () => {
-            const response = await getSessions(page, pageSize, [
-                {
-                    fieldName: 'dateTime',
-                    sort: 'DESC'
-                },
-                {
-                    fieldName: 'slots',
-                    sort: 'DESC'
-                }
-            ]);
+            const response = await getSessions(
+                page,
+                pageSize,
+                [
+                    {
+                        fieldName: 'dateTime',
+                        sort: 'DESC'
+                    },
+                    {
+                        fieldName: 'totalSlots',
+                        sort: 'DESC'
+                    }
+                ],
+                selectedDate.toDate()
+            );
+
             if (response && response.status === 200) {
                 console.log('API Response >>: ', response.data);
                 setData(response.data);
             }
         })();
-    }, [page]);
+    }, [page, selectedDate]);
 
     const pageChanged = (_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
         console.log('Page Selected >>: ', page);
@@ -71,34 +83,47 @@ export const SessionPage: React.FC = () => {
 
     return <>
         <div className="flex h-screen">
-            <Table>
-                <TableHead>
-                    <TableRow key={0}>
-                        <TableCell colSpan={2}>Select a session that you would like to train</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {data && data.content.map(session => <TableRow onClick={() => sessionSelected(session)}
-                                                                   key={session.id}>
-                        <TableCell>{`${new Date(session.dateTime).toDateString()}, ${new Date(session.dateTime).toLocaleTimeString()}`}</TableCell>
-                        <TableCell>{session.slots + ' slots'}</TableCell>
-                    </TableRow>)}
-                </TableBody>
-                <TableFooter>
-                    <TableRow>
-                        <TablePagination count={data?.totalElements || -1} page={page} rowsPerPage={pageSize}
-                                         rowsPerPageOptions={[pageSize]}
-                                         onRowsPerPageChange={rowsPerPageChanged}
-                                         onPageChange={pageChanged}/>
-                    </TableRow>
-                </TableFooter>
-            </Table>
+            <Stack spacing={2} style={{width: "100%"}}>
+                <StaticDatePicker
+                    displayStaticWrapperAs="mobile"
+                    value={selectedDate}
+                    onChange={(newValue) => {
+                        setSelectedDate(newValue || dayjs());
+                    }}
+                    renderInput={(params) => <TextField {...params} />}
+                />
+                <Table>
+                    <TableHead>
+                        <TableRow key={0}>
+                            <TableCell colSpan={2}>Select a session that you would like to train</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {data && data.content.map(session => <TableRow
+                            key={session.id}>
+                            <TableCell style={{paddingLeft: 50, paddingRight: 50}}>{`${dayjs(session.dateTime).format("HH:mm A")}`}</TableCell>
+                            <TableCell>
+                                <SessionSelectionButton sessionDTO={session} onClick={() => sessionSelected(session)}/>
+                            </TableCell>
+                        </TableRow>)}
+                    </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TablePagination count={data?.totalElements || -1} page={page} rowsPerPage={pageSize}
+                                             rowsPerPageOptions={[pageSize]}
+                                             onRowsPerPageChange={rowsPerPageChanged}
+                                             onPageChange={pageChanged}/>
+                        </TableRow>
+                    </TableFooter>
+                </Table>
+            </Stack>
+
+
         </div>
         <Dialog open={!!selectedSession} onClose={cancelSessionSelection}>
             <DialogTitle>Confirm to book this training session?</DialogTitle>
             {selectedSession && <>
-                <DialogContent>{`${new Date(selectedSession.dateTime).toDateString()}, ${new Date(selectedSession.dateTime).toLocaleTimeString()}`}</DialogContent>
-                <DialogContent>{selectedSession.slots + ' slots'}</DialogContent>
+                <DialogContent>{`${dayjs(selectedSession.dateTime).format("DD MMM YYYY, HH:mm A")}`}</DialogContent>
             </>}
             <DialogActions>
                 <Button onClick={cancelSessionSelection}>Cancel</Button>
@@ -106,4 +131,33 @@ export const SessionPage: React.FC = () => {
             </DialogActions>
         </Dialog>
     </>;
+};
+
+interface SessionSelectionButtonProps {
+    sessionDTO: SessionDTO;
+    onClick: () => void;
+}
+
+const SessionSelectionButton: React.FC<SessionSelectionButtonProps> = ({sessionDTO, onClick}) => {
+    const [bookingPage, setBookingPage] = useState<PageModel<BookingDTO>>();
+
+    useEffect(() => {
+        (async () => {
+            const response = await getBookingBySessionId(sessionDTO.id);
+
+            if (response && response.status === 200) {
+                setBookingPage(response.data);
+            }
+
+        })();
+    }, [sessionDTO]);
+
+    return bookingPage ?
+        <Button
+            variant="contained"
+            disabled={bookingPage.totalElements >= sessionDTO.totalSlots}
+            onClick={onClick}
+        >
+            {`${bookingPage.totalElements}/${sessionDTO.totalSlots} slots`}
+        </Button> : <Button>Loading</Button>;
 };

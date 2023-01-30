@@ -1,17 +1,19 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 
 export const BookingPage: React.FC = () => {
     const [searchParams] = useSearchParams();
+    const [selectedSessionId, setSelectedSessionId] = useState<number>();
 
     useEffect(() => {
-        const selectedSessionId = searchParams.get('selectedSessionId');
-        console.log(selectedSessionId);
+        const selectedSessionIdQueryParam = Number(searchParams.get('selectedSessionId'));
+        console.log(selectedSessionIdQueryParam);
+        setSelectedSessionId(selectedSessionIdQueryParam);
     }, [searchParams]);
 
     return <>
         <div onClick={() => {
-            console.log(searchParams);
+            console.log(selectedSessionId);
         }
         }>click
         </div>
