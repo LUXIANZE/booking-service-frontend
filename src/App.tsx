@@ -3,13 +3,16 @@ import React from 'react';
 import {RouterProvider} from "react-router-dom";
 import {router} from "./router/routes";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
+import {SnackbarProvider} from "notistack";
 
 function App() {
     return (
         <>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <RouterProvider router={router}/>
-            </LocalizationProvider>
+            <SnackbarProvider autoHideDuration={2000}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <RouterProvider router={router}/>
+                </LocalizationProvider>
+            </SnackbarProvider>
         </>
     );
 }

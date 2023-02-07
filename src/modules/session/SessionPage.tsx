@@ -1,24 +1,30 @@
 import React, {useEffect, useState} from "react";
 import {
     Button,
-    Dialog, DialogActions, DialogContent,
-    DialogTitle, Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableFooter,
-    TableHead,
-    TablePagination,
-    TableRow, TextField
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Grid,
+    List,
+    ListItem,
+    Paper,
+    Stack,
+    TextField,
+    Typography
 } from "@mui/material";
 import {getSessions} from "../../http/session-api";
 import {PageModel} from "../../models/dto/page-model";
 import {SessionDTO} from "../../models/dto/session-dto";
-import {useNavigate} from "react-router-dom";
 import {StaticDatePicker} from "@mui/x-date-pickers";
 import dayjs, {Dayjs} from "dayjs";
 import {getBookingBySessionId} from "../../http/booking-api";
 import {BookingDTO} from "../../models/dto/booking.dto";
+import {useSnackbar} from 'notistack';
+import {AxiosError} from "axios";
+import {payment} from "../../http/payment-api";
+
+import '../shared/scroll.css';
 
 export const SessionPage: React.FC = () => {
 
@@ -26,96 +32,95 @@ export const SessionPage: React.FC = () => {
     const [selectedSession, setSelectedSession] = useState<SessionDTO>();
     const [selectedDate, setSelectedDate] = React.useState<Dayjs>(dayjs());
 
-    const [page, setPage] = useState<number>(0);
-    const pageSize = 10;
-    const navigate = useNavigate();
+    const page = 0;
+    const pageSize = 1000; // Since we are using pagination, this is assuming not exceeding 1000 sessions per day
+    const {enqueueSnackbar} = useSnackbar();
 
     useEffect(() => {
         (async () => {
-            const response = await getSessions(
-                page,
-                pageSize,
-                [
-                    {
-                        fieldName: 'dateTime',
-                        sort: 'DESC'
-                    },
-                    {
-                        fieldName: 'totalSlots',
-                        sort: 'DESC'
-                    }
-                ],
-                selectedDate.toDate()
-            );
+            try {
+                const response = await getSessions(
+                    page,
+                    pageSize,
+                    [
+                        {
+                            fieldName: 'dateTime',
+                            sort: 'DESC'
+                        },
+                        {
+                            fieldName: 'totalSlots',
+                            sort: 'DESC'
+                        }
+                    ],
+                    selectedDate.toDate()
+                );
 
-            if (response && response.status === 200) {
-                console.log('API Response >>: ', response.data);
-                setData(response.data);
+                if (response && response.status === 200) {
+                    console.log('API Response >>: ', response.data);
+                    setData(response.data);
+                }
+            } catch (e) {
+                console.error(e);
+                if (e instanceof AxiosError) {
+                    const errorMessage = e.response?.data.message || "";
+                    enqueueSnackbar(errorMessage, {variant: "error"});
+                }
             }
+
         })();
-    }, [page, selectedDate]);
+    }, [enqueueSnackbar, page, pageSize, selectedDate]);
 
-    const pageChanged = (_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
-        console.log('Page Selected >>: ', page);
-        setPage(page);
-    };
-
-    const sessionSelected = (elem: SessionDTO) => {
+    const sessionSelected = async (elem: SessionDTO) => {
         console.log('Selected Session >>: ', elem);
         setSelectedSession(elem);
-    };
-
-    const rowsPerPageChanged = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        const selectedRowsPerPage = event.target.value;
-        console.log('Rows per page Selected >>: ', selectedRowsPerPage);
     };
 
     const cancelSessionSelection = () => {
         setSelectedSession(undefined);
     };
 
-    const confirmSessionSelection = () => {
+    const confirmSessionSelection = async () => {
         if (selectedSession) {
             console.log('Confirm selected session >>: ', selectedSession);
-            navigate(`/booking?selectedSessionId=${selectedSession.id}`);
+            const res = await payment();
+            if (res && res.status === 200) {
+                window.location.href = res.data;
+            } else {
+
+            }
         }
     };
 
     return <>
         <div className="flex h-screen">
             <Stack spacing={2} style={{width: "100%"}}>
+                <Typography variant="h6" style={{margin: "30px auto"}} gutterBottom>Please select a date for your
+                    training</Typography>
                 <StaticDatePicker
-                    displayStaticWrapperAs="mobile"
+                    displayStaticWrapperAs="desktop"
                     value={selectedDate}
                     onChange={(newValue) => {
                         setSelectedDate(newValue || dayjs());
                     }}
                     renderInput={(params) => <TextField {...params} />}
+                    showToolbar={false}
                 />
-                <Table>
-                    <TableHead>
-                        <TableRow key={0}>
-                            <TableCell colSpan={2}>Select a session that you would like to train</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {data && data.content.map(session => <TableRow
-                            key={session.id}>
-                            <TableCell style={{paddingLeft: 50, paddingRight: 50}}>{`${dayjs(session.dateTime).format("HH:mm A")}`}</TableCell>
-                            <TableCell>
-                                <SessionSelectionButton sessionDTO={session} onClick={() => sessionSelected(session)}/>
-                            </TableCell>
-                        </TableRow>)}
-                    </TableBody>
-                    <TableFooter>
-                        <TableRow>
-                            <TablePagination count={data?.totalElements || -1} page={page} rowsPerPage={pageSize}
-                                             rowsPerPageOptions={[pageSize]}
-                                             onRowsPerPageChange={rowsPerPageChanged}
-                                             onPageChange={pageChanged}/>
-                        </TableRow>
-                    </TableFooter>
-                </Table>
+                {data && !data.empty && <Paper className={'no-scrollbar'} style={{maxHeight: 300, overflow: "scroll"}}>
+                    <List>
+                        {data.content.map(session =>
+                            <ListItem key={session.id} style={{padding: "20px 20px"}}>
+                                <Grid container spacing={2}>
+                                    <Grid xs display="flex" justifyContent="center" alignItems="center">
+                                        {`${dayjs(session.dateTime).format("HH:mm A")}`}
+                                    </Grid>
+                                    <Grid xs display="flex" justifyContent="center" alignItems="center">
+                                        <SessionSelectionButton sessionDTO={session}
+                                                                onClick={() => sessionSelected(session)}/>
+                                    </Grid>
+                                </Grid>
+                            </ListItem>)}
+                    </List>
+                </Paper>}
             </Stack>
 
 
