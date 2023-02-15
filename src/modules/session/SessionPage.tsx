@@ -1,6 +1,7 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import {
     Button,
+    Card,
     Dialog,
     DialogActions,
     DialogContent,
@@ -9,22 +10,22 @@ import {
     List,
     ListItem,
     Paper,
+    Slide,
     Stack,
     TextField,
     Typography
 } from "@mui/material";
-import {getSessions} from "../../http/session-api";
-import {PageModel} from "../../models/dto/page-model";
-import {SessionDTO} from "../../models/dto/session-dto";
-import {StaticDatePicker} from "@mui/x-date-pickers";
-import dayjs, {Dayjs} from "dayjs";
-import {getBookingBySessionId} from "../../http/booking-api";
-import {BookingDTO} from "../../models/dto/booking.dto";
-import {useSnackbar} from 'notistack';
-import {AxiosError} from "axios";
-import {payment} from "../../http/payment-api";
-
-import '../shared/scroll.css';
+import { getSessions } from "../../http/session-api";
+import { PageModel } from "../../models/dto/page-model";
+import { SessionDTO } from "../../models/dto/session-dto";
+import { StaticDatePicker } from "@mui/x-date-pickers";
+import dayjs, { Dayjs } from "dayjs";
+import { getBookingsBySessionId } from "../../http/booking-api";
+import { BookingDTO } from "../../models/dto/booking.dto";
+import { useSnackbar } from 'notistack';
+import { AxiosError } from "axios";
+import '../shared/css/scroll.css';
+import { useNavigate } from "react-router-dom";
 
 export const SessionPage: React.FC = () => {
 
@@ -34,24 +35,27 @@ export const SessionPage: React.FC = () => {
 
     const page = 0;
     const pageSize = 1000; // Since we are using pagination, this is assuming not exceeding 1000 sessions per day
-    const {enqueueSnackbar} = useSnackbar();
+    const { enqueueSnackbar } = useSnackbar();
+    const navigation = useNavigate();
 
     useEffect(() => {
         (async () => {
             try {
                 const response = await getSessions(
-                    page,
-                    pageSize,
-                    [
-                        {
-                            fieldName: 'dateTime',
-                            sort: 'DESC'
-                        },
-                        {
-                            fieldName: 'totalSlots',
-                            sort: 'DESC'
-                        }
-                    ],
+                    {
+                        page: page,
+                        size: pageSize,
+                        sort: [
+                            {
+                                fieldName: 'dateTime',
+                                sort: 'ASC'
+                            },
+                            {
+                                fieldName: 'totalSlots',
+                                sort: 'DESC'
+                            }
+                        ]
+                    },
                     selectedDate.toDate()
                 );
 
@@ -62,11 +66,10 @@ export const SessionPage: React.FC = () => {
             } catch (e) {
                 console.error(e);
                 if (e instanceof AxiosError) {
-                    const errorMessage = e.response?.data.message || "";
-                    enqueueSnackbar(errorMessage, {variant: "error"});
+                    const errorMessage = e.response?.data.message || "Server Error, Please try again in 5 minutes. If error persist, please contact +xxxxxxxxx";
+                    enqueueSnackbar(errorMessage, { variant: "error" });
                 }
             }
-
         })();
     }, [enqueueSnackbar, page, pageSize, selectedDate]);
 
@@ -75,64 +78,78 @@ export const SessionPage: React.FC = () => {
         setSelectedSession(elem);
     };
 
-    const cancelSessionSelection = () => {
+    const cancelBookSession = () => {
         setSelectedSession(undefined);
     };
 
-    const confirmSessionSelection = async () => {
+    const bookSession = async () => {
         if (selectedSession) {
-            console.log('Confirm selected session >>: ', selectedSession);
-            const res = await payment();
-            if (res && res.status === 200) {
-                window.location.href = res.data;
-            } else {
-
-            }
+            console.log('Booking with selected session >>: ', selectedSession);
+            navigation(`/booking?sessionId=${selectedSession.id}`);
         }
     };
 
     return <>
         <div className="flex h-screen">
-            <Stack spacing={2} style={{width: "100%"}}>
-                <Typography variant="h6" style={{margin: "30px auto"}} gutterBottom>Please select a date for your
-                    training</Typography>
-                <StaticDatePicker
-                    displayStaticWrapperAs="desktop"
-                    value={selectedDate}
-                    onChange={(newValue) => {
-                        setSelectedDate(newValue || dayjs());
-                    }}
-                    renderInput={(params) => <TextField {...params} />}
-                    showToolbar={false}
-                />
-                {data && !data.empty && <Paper className={'no-scrollbar'} style={{maxHeight: 300, overflow: "scroll"}}>
-                    <List>
-                        {data.content.map(session =>
-                            <ListItem key={session.id} style={{padding: "20px 20px"}}>
-                                <Grid container spacing={2}>
-                                    <Grid xs display="flex" justifyContent="center" alignItems="center">
-                                        {`${dayjs(session.dateTime).format("HH:mm A")}`}
-                                    </Grid>
-                                    <Grid xs display="flex" justifyContent="center" alignItems="center">
-                                        <SessionSelectionButton sessionDTO={session}
-                                                                onClick={() => sessionSelected(session)}/>
-                                    </Grid>
-                                </Grid>
-                            </ListItem>)}
-                    </List>
-                </Paper>}
+            <Stack spacing={2} style={{ width: "100%" }}>
+                <Slide in timeout={800}>
+                    <Stack>
+                        <Typography variant="h6" style={{ margin: "30px auto" }} gutterBottom>
+                            Please select a date for your training
+                        </Typography>
+                        <StaticDatePicker
+                            displayStaticWrapperAs="desktop"
+                            value={selectedDate}
+                            onChange={(newValue) => {
+                                setSelectedDate(newValue || dayjs());
+                            }}
+                            renderInput={(params) => <TextField {...params} />}
+                            showToolbar={false}
+                        />
+                    </Stack>
+                </Slide>
+                {/* <Slide in direction="up" timeout={1500}> */}
+                <Stack>{(data && !data.empty) ? <>
+                    <Paper className={'no-scrollbar'} style={{ maxHeight: 300, overflow: "scroll" }}>
+                        <List>
+                            {data.content.map((session, index) =>
+                                <ListItem key={session.id}>
+                                    <Slide in direction="up" timeout={((index + 1) * 400) + 500}>
+                                        <Card elevation={3} style={{ width: '100%' }}>
+                                            <Grid container spacing={2} style={{ margin: '20px auto' }}>
+                                                <Grid item xs display="flex" justifyContent="center" alignItems="center">
+                                                    {`${dayjs(session.dateTime).format("HH:mm A")}`}
+                                                </Grid>
+                                                <Grid item xs display="flex" justifyContent="center" alignItems="center">
+                                                    <SessionSelectionButton sessionDTO={session}
+                                                        onClick={() => sessionSelected(session)} />
+                                                </Grid>
+                                            </Grid>
+                                        </Card>
+                                    </Slide>
+                                </ListItem>)}
+                        </List>
+                    </Paper>
+                </> : <>
+                    <Slide in timeout={1000} direction="up">
+                        <Typography style={{ margin: "30px auto", padding: 40, textAlign: 'center' }}>No Sessions found on this date, please select another date</Typography>
+                    </Slide>
+
+                </>}
+                </Stack>
+                {/* </Slide> */}
             </Stack>
 
 
         </div>
-        <Dialog open={!!selectedSession} onClose={cancelSessionSelection}>
+        <Dialog open={!!selectedSession} onClose={cancelBookSession}>
             <DialogTitle>Confirm to book this training session?</DialogTitle>
             {selectedSession && <>
                 <DialogContent>{`${dayjs(selectedSession.dateTime).format("DD MMM YYYY, HH:mm A")}`}</DialogContent>
             </>}
             <DialogActions>
-                <Button onClick={cancelSessionSelection}>Cancel</Button>
-                <Button onClick={confirmSessionSelection}>Confirm</Button>
+                <Button onClick={cancelBookSession}>Cancel</Button>
+                <Button onClick={bookSession}>Confirm</Button>
             </DialogActions>
         </Dialog>
     </>;
@@ -143,12 +160,20 @@ interface SessionSelectionButtonProps {
     onClick: () => void;
 }
 
-const SessionSelectionButton: React.FC<SessionSelectionButtonProps> = ({sessionDTO, onClick}) => {
+const SessionSelectionButton: React.FC<SessionSelectionButtonProps> = ({ sessionDTO, onClick }) => {
     const [bookingPage, setBookingPage] = useState<PageModel<BookingDTO>>();
 
     useEffect(() => {
         (async () => {
-            const response = await getBookingBySessionId(sessionDTO.id);
+            // Because we only want to know the "totalElements" field of "Page" object, thus we can query 0 page size to reduce latency
+            const response = await getBookingsBySessionId(
+                {
+                    page: 0,
+                    size: 0,
+                    sort: []
+                },
+                sessionDTO.id
+            );
 
             if (response && response.status === 200) {
                 setBookingPage(response.data);

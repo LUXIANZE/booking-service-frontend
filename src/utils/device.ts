@@ -1,6 +1,6 @@
 import {v4 as uuidV4} from 'uuid';
 import {DEVICE_UUID_KEY} from "../constants/local-storage-constants";
-import {createDevice, getDeviceByDeviceId} from "../http/device-api";
+import {createDevice, getDeviceById} from "../http/device-api";
 
 export const registerLocalUUID = () => {
     const uuid = uuidV4();
@@ -29,7 +29,7 @@ export const checkAgainstServerUUID = async () => {
     }
 
     try {
-        const serverUUID = await getDeviceByDeviceId(localUUID);
+        const serverUUID = await getDeviceById(localUUID);
 
         if (serverUUID && serverUUID.status === 200) {
             return serverUUID.data.deviceId === localUUID;

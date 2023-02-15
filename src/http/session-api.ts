@@ -1,19 +1,25 @@
 import {AxiosInstance} from "./axios-config";
-import {SortModel} from "../models/dto/sort-model";
 import {PageModel} from "../models/dto/page-model";
 import {SessionDTO} from "../models/dto/session-dto";
+import {PageableDTO} from "../models/dto/pageable.dto";
+import {getPageableString} from "../utils/pageable";
+import {getLocalDate} from "../utils/local-date";
 
-export const getSessions = (page: number, size: number, sort: SortModel[] = [], date: Date) => {
-    let sortString = "";
+export const getSessions = (pageable: PageableDTO, date: Date) => {
+    const pageableString = getPageableString(pageable);
+    const filterDate = getLocalDate(date);
 
-    if (sort) {
-        sort.forEach(s => {
-            const formattedSortString = `${s.fieldName},${s.sort}`;
-            sortString += `&sort=${formattedSortString}`;
-        });
-    }
-
-    const filterDate = date.toISOString().split("T")[0];
-
-    return AxiosInstance.get<PageModel<SessionDTO>>(`session?page=${page}&dateString=${filterDate}&size=${size}${sortString}`);
+    return AxiosInstance.get<PageModel<SessionDTO>>(`session?${pageableString}&dateString=${filterDate}`);
 };
+
+export const updateSession = (sessionDTO: SessionDTO) => {
+    return AxiosInstance.put<SessionDTO>("session", sessionDTO);
+};
+
+export const createSession = (sessionDTO: SessionDTO) => {
+    return AxiosInstance.post<SessionDTO>("session", sessionDTO);
+};
+
+export const getSessionById = (id: number) => {
+    return AxiosInstance.get<SessionDTO>(`session/${id}`)
+}

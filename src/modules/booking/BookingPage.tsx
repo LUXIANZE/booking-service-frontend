@@ -1,21 +1,70 @@
-import React, {useEffect, useState} from "react";
-import {useSearchParams} from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { BaseUserDTO } from "../../models/dto/base-user.dto";
+import { Button, Stack, Typography } from "@mui/material";
+import { createBooking } from "../../http/booking-api";
+import { payment } from "../../http/payment-api";
+import { externalRedirect } from "../../utils/redirect";
+import { useSnackbar } from "notistack";
+import { UserList } from "./components/user-list";
+import { CreateNewUserPopup } from "./components/create-new-user-popup";
 
 export const BookingPage: React.FC = () => {
     const [searchParams] = useSearchParams();
-    const [selectedSessionId, setSelectedSessionId] = useState<number>();
+    const { enqueueSnackbar } = useSnackbar();
+    const [sessionId, setSessionId] = useState<number>();
+    const [user, setUser] = useState<BaseUserDTO>();
+    const [createUserPopupOpen, setCreateUserPopupOpen] = useState<boolean>(false);
 
     useEffect(() => {
-        const selectedSessionIdQueryParam = Number(searchParams.get('selectedSessionId'));
-        console.log(selectedSessionIdQueryParam);
-        setSelectedSessionId(selectedSessionIdQueryParam);
+        (async () => {
+            const sessionIdParam = Number(searchParams.get('sessionId'));
+            console.log('sessionIdParam >>: ', sessionIdParam);
+            setSessionId(sessionIdParam);
+        })();
     }, [searchParams]);
 
-    return <>
-        <div onClick={() => {
-            console.log(selectedSessionId);
+    const createNewUser = () => {
+        setCreateUserPopupOpen(true);
+    };
+
+    const bookSession = async () => {
+
+        if (typeof user !== 'undefined') {
+            if (sessionId && (typeof user.id === 'number')) {
+                const res = await createBooking({
+                    id: null,
+                    sessionId: sessionId,
+                    userId: user.id,
+                    attendance: false,
+                    paymentDone: false,
+                });
+
+                if (res && res.status === 200 && (typeof res.data.id === 'number')) {
+                    const paymentLinkRes = await payment(res.data.id);
+                    if (paymentLinkRes && paymentLinkRes.status === 200) {
+                        externalRedirect(paymentLinkRes.data);
+                    }
+                }
+            }
+        } else {
+            enqueueSnackbar(
+                'No user Selected, please select existing user or create new user by clicking on New User button.',
+                { variant: "error" }
+            );
         }
-        }>click
-        </div>
+    };
+
+
+    return <>
+        <Stack>
+            <Typography variant="h6" style={{ margin: "30px auto" }} gutterBottom>Booking as</Typography>
+            <Stack spacing={5} style={{ margin: "0px 20px" }}>
+                <UserList selectedUser={user} onUserSelected={setUser} />
+                <Button variant={'contained'} onClick={createNewUser}>New User</Button>
+                <Button variant={'contained'} onClick={bookSession}>Book this session</Button>
+            </Stack>
+        </Stack>
+        <CreateNewUserPopup open={createUserPopupOpen} setOpen={setCreateUserPopupOpen} setUser={setUser} />
     </>;
 };

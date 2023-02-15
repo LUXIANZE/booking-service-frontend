@@ -1,7 +1,7 @@
 import React from "react";
-import {Button} from "@mui/material";
-import {checkAgainstServerUUID, localUuidExists, registerLocalUUID, registerServerUUID} from "../../utils/device";
-import {useNavigate} from "react-router-dom";
+import { Button, Stack } from "@mui/material";
+import { checkAgainstServerUUID, localUuidExists, registerLocalUUID, registerServerUUID } from "../../utils/device";
+import { useNavigate } from "react-router-dom";
 
 export const WelcomePage: React.FC = () => {
 
@@ -26,9 +26,14 @@ export const WelcomePage: React.FC = () => {
     return <>
         <div className="flex h-screen">
             <div className="m-auto">
-                <Button style={{width: '100%'}} variant="contained" onClick={applicationStartCheck}>
-                    Book Badminton Training
-                </Button>
+                <Stack spacing={2}>
+                    <Button style={{ width: '100%' }} variant="contained" onClick={applicationStartCheck}>
+                        Book Badminton Training
+                    </Button>
+                    <Button style={{ width: '100%' }} variant="contained" onClick={() => { }}>
+                        View My Bookings
+                    </Button>
+                </Stack>
             </div>
         </div>
     </>;

@@ -1,22 +1,22 @@
-import React, {useEffect, useState} from "react";
-import {getDeviceId} from "../../utils/device";
-import {PublicUserDTO} from "../../models/dto/public-user.dto";
-import {PublicUserList} from "./components/PublicUserList";
+import React, { useEffect, useState } from "react";
+import { getDeviceId } from "../../utils/device";
+import { BaseUserDTO } from "../../models/dto/base-user.dto";
+import { PublicUserList } from "./components/PublicUserList";
+import { getUsersByDeviceId } from "../../http/user-api";
 
 export const PublicUserPage: React.FC = () => {
     const deviceId = getDeviceId();
-    const [publicUsers, setPublicUsers] = useState<PublicUserDTO[]>([]);
+    const [publicUsers, setPublicUsers] = useState<BaseUserDTO[]>([]);
 
     useEffect(() => {
         try {
-            // TODO: This API is migrated to user API
-            // (async () => {
-            //     const res = await getPublicUsersByDeviceId(deviceId);
-            //
-            //     if (res && res.status === 200) {
-            //         setPublicUsers(res.data);
-            //     }
-            // })();
+            (async () => {
+                const res = await getUsersByDeviceId(deviceId);
+
+                if (res && res.status === 200) {
+                    setPublicUsers(res.data);
+                }
+            })();
         } catch (e) {
             console.error(e);
         }
@@ -25,7 +25,7 @@ export const PublicUserPage: React.FC = () => {
     return <>
         <div className="flex h-screen">
             <div className="m-auto">
-                <PublicUserList publicUsers={publicUsers}/>
+                <PublicUserList publicUsers={publicUsers} />
             </div>
         </div>
     </>;

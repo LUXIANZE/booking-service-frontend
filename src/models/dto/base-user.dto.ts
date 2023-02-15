@@ -1,4 +1,4 @@
-export interface PublicUserDTO {
+export interface BaseUserDTO {
     id: number | null;
     identity: string;
     phoneNumber: string;

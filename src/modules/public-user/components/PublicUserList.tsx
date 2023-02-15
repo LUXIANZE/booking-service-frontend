@@ -1,11 +1,11 @@
 import React, {useState} from "react";
-import {PublicUserDTO} from "../../../models/dto/public-user.dto";
+import {BaseUserDTO} from "../../../models/dto/base-user.dto";
 import {Button, List, ListItem} from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import {RegisterPublicUserPopUp} from "./RegisterPublicUserPopUp";
 
 export interface PublicUserListProps {
-    publicUsers: PublicUserDTO[];
+    publicUsers: BaseUserDTO[];
 }
 
 export const PublicUserList: React.FC<PublicUserListProps> = ({publicUsers}) => {
@@ -26,7 +26,7 @@ export const PublicUserList: React.FC<PublicUserListProps> = ({publicUsers}) => 
 };
 
 interface UserButtonProps {
-    publicUser?: PublicUserDTO;
+    publicUser?: BaseUserDTO;
 }
 
 const UserButton: React.FC<UserButtonProps> = ({publicUser}) => {

@@ -1,8 +1,5 @@
-export interface UserDTO {
-    id: number;
-    identity: string;
-    phoneNumber: string;
-    email: string;
-    pin: string;
-    role: string;
+import {BaseUserDTO} from "./base-user.dto";
+
+export interface UserDTO extends BaseUserDTO {
+    pin: string | null;
 }
