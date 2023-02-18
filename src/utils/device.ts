@@ -1,6 +1,6 @@
-import {v4 as uuidV4} from 'uuid';
-import {DEVICE_UUID_KEY} from "../constants/local-storage-constants";
-import {createDevice, getDeviceById} from "../http/device-api";
+import { v4 as uuidV4 } from 'uuid';
+import { DEVICE_UUID_KEY } from "../constants/local-storage-constants";
+import { createDevice, getDeviceById } from "../http/device-api";
 
 export const registerLocalUUID = () => {
     const uuid = uuidV4();
@@ -11,7 +11,7 @@ export const registerServerUUID = async () => {
     const localUUID = localStorage.getItem(DEVICE_UUID_KEY);
     if (localUUID) {
         try {
-            await createDevice({deviceId: localUUID});
+            await createDevice({ deviceId: localUUID });
         } catch (e) {
             console.error(e);
         }
@@ -28,18 +28,15 @@ export const checkAgainstServerUUID = async () => {
         return false;
     }
 
-    try {
-        const serverUUID = await getDeviceById(localUUID);
+    const serverUUID = await getDeviceById(localUUID);
 
-        if (serverUUID && serverUUID.status === 200) {
+    if (serverUUID) {
+        if (serverUUID.status === 200) {
             return serverUUID.data.deviceId === localUUID;
         } else {
             return false;
         }
-    } catch (e) {
-        return false;
     }
-
 };
 
 export const getDeviceId = () => localStorage.getItem(DEVICE_UUID_KEY) || '';

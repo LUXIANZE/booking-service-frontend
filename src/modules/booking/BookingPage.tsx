@@ -59,7 +59,7 @@ export const BookingPage: React.FC = () => {
     return <>
         <Stack>
             <Typography variant="h6" style={{ margin: "30px auto" }} gutterBottom>Booking as</Typography>
-            <Stack spacing={5} style={{ margin: "0px 20px" }}>
+            <Stack spacing={2} style={{ margin: "0px 20px" }}>
                 <UserList selectedUser={user} onUserSelected={setUser} />
                 <Button variant={'contained'} onClick={createNewUser}>New User</Button>
                 <Button variant={'contained'} onClick={bookSession}>Book this session</Button>

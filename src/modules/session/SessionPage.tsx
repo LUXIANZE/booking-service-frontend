@@ -9,11 +9,11 @@ import {
     Grid,
     List,
     ListItem,
-    Paper,
     Slide,
     Stack,
     TextField,
-    Typography
+    Typography,
+    Zoom
 } from "@mui/material";
 import { getSessions } from "../../http/session-api";
 import { PageModel } from "../../models/dto/page-model";
@@ -97,24 +97,25 @@ export const SessionPage: React.FC = () => {
                         <Typography variant="h6" style={{ margin: "30px auto" }} gutterBottom>
                             Please select a date for your training
                         </Typography>
-                        <StaticDatePicker
-                            displayStaticWrapperAs="desktop"
-                            value={selectedDate}
-                            onChange={(newValue) => {
-                                setSelectedDate(newValue || dayjs());
-                            }}
-                            renderInput={(params) => <TextField {...params} />}
-                            showToolbar={false}
-                        />
+                        <Card style={{ margin: '0px 20px' }}>
+                            <StaticDatePicker
+                                displayStaticWrapperAs="desktop"
+                                value={selectedDate}
+                                onChange={(newValue) => {
+                                    setSelectedDate(newValue || dayjs());
+                                }}
+                                renderInput={(params) => <TextField {...params} />}
+                                showToolbar={false}
+                            />
+                        </Card>
                     </Stack>
                 </Slide>
-                {/* <Slide in direction="up" timeout={1500}> */}
                 <Stack>{(data && !data.empty) ? <>
-                    <Paper className={'no-scrollbar'} style={{ maxHeight: 300, overflow: "scroll" }}>
+                    <div className={'no-scrollbar'} style={{ maxHeight: 500, overflow: "scroll" }}>
                         <List>
                             {data.content.map((session, index) =>
                                 <ListItem key={session.id}>
-                                    <Slide in direction="up" timeout={((index + 1) * 400) + 500}>
+                                    <Zoom in timeout={((index + 1) * 200) + 300}>
                                         <Card elevation={3} style={{ width: '100%' }}>
                                             <Grid container spacing={2} style={{ margin: '20px auto' }}>
                                                 <Grid item xs display="flex" justifyContent="center" alignItems="center">
@@ -126,21 +127,19 @@ export const SessionPage: React.FC = () => {
                                                 </Grid>
                                             </Grid>
                                         </Card>
-                                    </Slide>
+                                    </Zoom>
                                 </ListItem>)}
                         </List>
-                    </Paper>
+                    </div>
                 </> : <>
-                    <Slide in timeout={1000} direction="up">
-                        <Typography style={{ margin: "30px auto", padding: 40, textAlign: 'center' }}>No Sessions found on this date, please select another date</Typography>
-                    </Slide>
-
+                    <Zoom in timeout={500}>
+                        <Card style={{ margin: '0px 20px' }}>
+                            <Typography style={{ margin: "0px auto", padding: 40, textAlign: 'center' }}>No Sessions found on this date, please select another date</Typography>
+                        </Card>
+                    </Zoom>
                 </>}
                 </Stack>
-                {/* </Slide> */}
             </Stack>
-
-
         </div>
         <Dialog open={!!selectedSession} onClose={cancelBookSession}>
             <DialogTitle>Confirm to book this training session?</DialogTitle>

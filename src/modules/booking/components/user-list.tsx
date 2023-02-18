@@ -44,24 +44,26 @@ export const UserList: React.FC<SelectUserProps> = ({ selectedUser, onUserSelect
     }, [selectedUser]);
 
     return <>
-        <Paper className={'no-scrollbar'} style={{ maxHeight: 300, overflow: "scroll" }}>
+        <div className={'no-scrollbar'} style={{ maxHeight: 300, overflow: "scroll" }}>
             <List>
                 {users.map(user =>
-                    <ListItem key={user.id}>
-                        <Grid container spacing={1} >
-                            <Grid item xs >
-                                {`I/C No. : ${user.identity}`}
+                    <ListItem key={user.id} style={{ padding: '8px 0px' }}>
+                        <Paper style={{ width: '100%', padding: 20 }}>
+                            <Grid container spacing={1} >
+                                <Grid item xs >
+                                    {`I/C No. : ${user.identity}`}
+                                </Grid>
+                                <Grid item xs display="flex" justifyContent="right" alignItems="center">
+                                    {selectedUser?.id === user.id ? <>
+                                        <Button disabled variant="contained" style={{ width: 110 }}>Selected</Button>
+                                    </> : <>
+                                        <Button variant="outlined" onClick={() => onUserSelected(user)} style={{ width: 110 }}>Select</Button>
+                                    </>}
+                                </Grid>
                             </Grid>
-                            <Grid item xs display="flex" justifyContent="right" alignItems="center">
-                                {selectedUser?.id === user.id ? <>
-                                    <Button disabled variant="contained" style={{ width: 110 }}>Selected</Button>
-                                </> : <>
-                                    <Button variant="outlined" onClick={() => onUserSelected(user)} style={{ width: 110 }}>Select</Button>
-                                </>}
-                            </Grid>
-                        </Grid>
+                        </Paper>
                     </ListItem>)}
             </List>
-        </Paper>
+        </div>
     </>;
 };
