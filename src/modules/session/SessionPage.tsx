@@ -111,7 +111,7 @@ export const SessionPage: React.FC = () => {
                     </Stack>
                 </Slide>
                 <Stack>{(data && !data.empty) ? <>
-                    <div className={'no-scrollbar'} style={{ maxHeight: 500, overflow: "scroll" }}>
+                    <div className={'no-scrollbar'} style={{ maxHeight: 400, overflow: "scroll" }}>
                         <List>
                             {data.content.map((session, index) =>
                                 <ListItem key={session.id}>

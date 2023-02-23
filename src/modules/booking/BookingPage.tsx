@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { BaseUserDTO } from "../../models/dto/base-user.dto";
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography, Zoom } from "@mui/material";
 import { createBooking } from "../../http/booking-api";
 import { payment } from "../../http/payment-api";
 import { externalRedirect } from "../../utils/redirect";
 import { useSnackbar } from "notistack";
 import { UserList } from "./components/user-list";
 import { CreateNewUserPopup } from "./components/create-new-user-popup";
+import { LoadingButton } from "@mui/lab";
 
 export const BookingPage: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -15,6 +16,7 @@ export const BookingPage: React.FC = () => {
     const [sessionId, setSessionId] = useState<number>();
     const [user, setUser] = useState<BaseUserDTO>();
     const [createUserPopupOpen, setCreateUserPopupOpen] = useState<boolean>(false);
+    const [redirectingToCheckout, setRedirectingToCheckout] = useState<boolean>(false);
 
     useEffect(() => {
         (async () => {
@@ -29,6 +31,7 @@ export const BookingPage: React.FC = () => {
     };
 
     const bookSession = async () => {
+        setRedirectingToCheckout(true);
 
         if (typeof user !== 'undefined') {
             if (sessionId && (typeof user.id === 'number')) {
@@ -61,8 +64,12 @@ export const BookingPage: React.FC = () => {
             <Typography variant="h6" style={{ margin: "30px auto" }} gutterBottom>Booking as</Typography>
             <Stack spacing={2} style={{ margin: "0px 20px" }}>
                 <UserList selectedUser={user} onUserSelected={setUser} />
-                <Button variant={'contained'} onClick={createNewUser}>New User</Button>
-                <Button variant={'contained'} onClick={bookSession}>Book this session</Button>
+                <Zoom in timeout={400}>
+                    <Button variant={'contained'} onClick={createNewUser}>New User</Button>
+                </Zoom>
+                <Zoom in timeout={600}>
+                    <LoadingButton loading={redirectingToCheckout} variant={'contained'} onClick={bookSession}>Book this session</LoadingButton>
+                </Zoom>
             </Stack>
         </Stack>
         <CreateNewUserPopup open={createUserPopupOpen} setOpen={setCreateUserPopupOpen} setUser={setUser} />

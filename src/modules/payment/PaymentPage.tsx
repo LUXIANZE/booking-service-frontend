@@ -11,7 +11,7 @@ export const PaymentPage: React.FC<{ paymentStatus: 'success' | 'cancel' }> = ({
         <div style={{ margin: 'auto' }}>
             <Stack spacing={10}>
                 {paymentStatus === 'success' ? <PaymentSuccess /> : <PaymentCancel />}
-                <Button variant="contained" color="info" onClick={() => navigation('/')}>Back to home</Button>
+                <Button variant="contained" onClick={() => navigation('/')}>Back to home</Button>
             </Stack>
         </div>
     </div>;

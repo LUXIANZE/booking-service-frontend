@@ -13,16 +13,16 @@ export interface CreateNewUserPopupProps {
 }
 
 export const CreateNewUserPopup: React.FC<CreateNewUserPopupProps> = ({ open, setOpen, setUser }) => {
-    const [email, setEmail] = useState<string>();
-    const [identity, setIdentity] = useState<string>();
-    const [phoneNumber, setPhoneNumber] = useState<string>();
+    const [email, setEmail] = useState<string>('');
+    const [identity, setIdentity] = useState<string>('');
+    const [phoneNumber, setPhoneNumber] = useState<string>('');
     const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
         return () => {
-            setEmail(undefined);
-            setIdentity(undefined);
-            setPhoneNumber(undefined);
+            setEmail('');
+            setIdentity('');
+            setPhoneNumber('');
         }
     }, [])
 
