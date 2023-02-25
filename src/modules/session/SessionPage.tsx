@@ -26,8 +26,13 @@ import { useSnackbar } from 'notistack';
 import { AxiosError } from "axios";
 import '../shared/css/scroll.css';
 import { useNavigate } from "react-router-dom";
+import { useWindowSize } from "react-use";
+import { isSessionAvailable } from "./util/session-eligibility-check";
 
 export const SessionPage: React.FC = () => {
+
+    const { width, height } = useWindowSize()
+    const [sessionListMaxHeight, setSessionListMaxHeight] = useState<number>(400)
 
     const [data, setData] = useState<PageModel<SessionDTO>>();
     const [selectedSession, setSelectedSession] = useState<SessionDTO>();
@@ -37,6 +42,7 @@ export const SessionPage: React.FC = () => {
     const pageSize = 1000; // Since we are using pagination, this is assuming not exceeding 1000 sessions per day
     const { enqueueSnackbar } = useSnackbar();
     const navigation = useNavigate();
+
 
     useEffect(() => {
         (async () => {
@@ -73,6 +79,26 @@ export const SessionPage: React.FC = () => {
         })();
     }, [enqueueSnackbar, page, pageSize, selectedDate]);
 
+    // Disabling es-lint because this effect is required to be fired frequently to keep track of max height set correctly
+    // eslint-disable-next-line
+    useEffect(() => {
+        /**
+         * https://mui.com/material-ui/customization/breakpoints/#default-breakpoints
+         */
+        if (width < 600) {
+            // phone width
+            const element = document.getElementById("session-page/date-picker-card");
+            if (element) {
+                const bottomYCoordination = element.getBoundingClientRect().bottom; // the bottom y-axis value
+                setSessionListMaxHeight((height - bottomYCoordination) * 0.9);
+            }
+            // setSessionListMaxHeight(400);
+        } else {
+            // larger than phone width
+            setSessionListMaxHeight(height * 0.9);
+        }
+    })
+
     const sessionSelected = async (elem: SessionDTO) => {
         console.log('Selected Session >>: ', elem);
         setSelectedSession(elem);
@@ -90,36 +116,38 @@ export const SessionPage: React.FC = () => {
     };
 
     return <>
-        <div className="flex h-screen">
-            <Stack spacing={2} style={{ width: "100%" }}>
+        <Grid container>
+            <Grid xs={12} item>
+                <Typography variant="h6" style={{ margin: 20, textAlign: 'center' }} gutterBottom>
+                    Please select a date for your training
+                </Typography>
+            </Grid>
+            <Grid xs={12} sm={6} item>
                 <Slide in timeout={800}>
-                    <Stack>
-                        <Typography variant="h6" style={{ margin: "30px auto" }} gutterBottom>
-                            Please select a date for your training
-                        </Typography>
-                        <Card style={{ margin: '0px 20px' }}>
-                            <StaticDatePicker
-                                displayStaticWrapperAs="desktop"
-                                value={selectedDate}
-                                onChange={(newValue) => {
-                                    setSelectedDate(newValue || dayjs());
-                                }}
-                                renderInput={(params) => <TextField {...params} />}
-                                showToolbar={false}
-                            />
-                        </Card>
-                    </Stack>
+                    <Card style={{ margin: 20 }} elevation={10} id="session-page/date-picker-card">
+                        <StaticDatePicker
+                            displayStaticWrapperAs="desktop"
+                            value={selectedDate}
+                            onChange={(newValue) => {
+                                setSelectedDate(newValue || dayjs());
+                            }}
+                            renderInput={(params) => <TextField {...params} />}
+                            showToolbar={false}
+                        />
+                    </Card>
                 </Slide>
-                <Stack>{(data && !data.empty) ? <>
-                    <div className={'no-scrollbar'} style={{ maxHeight: 400, overflow: "scroll" }}>
+            </Grid>
+            <Grid xs={12} sm={6} item>
+                <Stack>
+                    <div className={'no-scrollbar'} style={{ maxHeight: sessionListMaxHeight, overflow: "scroll" }}>
                         <List>
-                            {data.content.map((session, index) =>
+                            {(data && !data.empty) ? data.content.map((session, index) =>
                                 <ListItem key={session.id}>
                                     <Zoom in timeout={((index + 1) * 200) + 300}>
                                         <Card elevation={3} style={{ width: '100%' }}>
-                                            <Grid container spacing={2} style={{ margin: '20px auto' }}>
+                                            <Grid container style={{ margin: '20px auto' }}>
                                                 <Grid item xs display="flex" justifyContent="center" alignItems="center">
-                                                    {`${dayjs(session.dateTime).format("HH:mm A")}`}
+                                                    {`${dayjs(session.dateTime).format("hh:mm A")}`}
                                                 </Grid>
                                                 <Grid item xs display="flex" justifyContent="center" alignItems="center">
                                                     <SessionSelectionButton sessionDTO={session}
@@ -128,19 +156,20 @@ export const SessionPage: React.FC = () => {
                                             </Grid>
                                         </Card>
                                     </Zoom>
-                                </ListItem>)}
+                                </ListItem>) : <>
+                                <ListItem key="no-session-card">
+                                    <Zoom in timeout={500}>
+                                        <Card>
+                                            <Typography style={{ margin: "0px auto", padding: 40, textAlign: 'center' }}>No Sessions found on this date, please select another date</Typography>
+                                        </Card>
+                                    </Zoom>
+                                </ListItem>
+                            </>}
                         </List>
                     </div>
-                </> : <>
-                    <Zoom in timeout={500}>
-                        <Card style={{ margin: '0px 20px' }}>
-                            <Typography style={{ margin: "0px auto", padding: 40, textAlign: 'center' }}>No Sessions found on this date, please select another date</Typography>
-                        </Card>
-                    </Zoom>
-                </>}
                 </Stack>
-            </Stack>
-        </div>
+            </Grid>
+        </Grid>
         <Dialog open={!!selectedSession} onClose={cancelBookSession}>
             <DialogTitle>Confirm to book this training session?</DialogTitle>
             {selectedSession && <>
@@ -184,7 +213,7 @@ const SessionSelectionButton: React.FC<SessionSelectionButtonProps> = ({ session
     return bookingPage ?
         <Button
             variant="contained"
-            disabled={bookingPage.totalElements >= sessionDTO.totalSlots}
+            disabled={!isSessionAvailable(sessionDTO, bookingPage.totalElements, new Date())}
             onClick={onClick}
         >
             {`${bookingPage.totalElements}/${sessionDTO.totalSlots} slots`}

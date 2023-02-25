@@ -16,7 +16,7 @@ export const getSortString: (sortModel: SortModel[]) => string = (sortModel) => 
 };
 
 export const getPageableString: (pageable: PageableDTO) => string = (pageable) => {
-    const sortString = getSortString(pageable.sort);
+    const sortString = getSortString(pageable.sort).trim();
 
-    return `page=${pageable.page}&size=${pageable.size}${sortString === "" ? "&" + sortString : ""}`;
+    return `page=${pageable.page}&size=${pageable.size}${sortString === "" ? "" : sortString}`;
 };
